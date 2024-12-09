@@ -2,15 +2,13 @@ import os
 import time
 import muselsl as msl
 from multiprocessing import Process
+from muse_record import record
 
 def stream(address):
     msl.stream(address)
 
 def view(version):
     msl.view(version=version)
-
-def record(duration, filename):
-    msl.record(duration=duration,filename=filename)
 
 def setup():
     address = ""
@@ -42,6 +40,11 @@ def setup():
 
     record_process = Process(target=record, args=(20,filename))
     record_process.start()
+
+    #end it all
+    record_process.join()
+    view_process.kill()
+    stream_process.kill()
 
 if __name__ == "__main__":
     setup()
