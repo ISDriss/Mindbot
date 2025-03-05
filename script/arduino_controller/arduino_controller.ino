@@ -19,12 +19,12 @@ void loop() {
     
     Serial.print(b1);
     Serial.print(",");
-    Serial.println(b2);
+    Serial.print(b2);
     Serial.print(",");
     Serial.print(b3);
     Serial.print(",");
     Serial.println(b4);
     
-    delay(10);
+    delay(100);
 }
 
