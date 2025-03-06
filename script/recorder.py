@@ -5,6 +5,196 @@ from muselsl.constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LS
 from muselsl.record import _save
 from multiprocessing import Event
 
+def record_muse(
+    stop_event: Event,
+    filename=None,
+    save_frequence=5,
+    dejitter=False,
+    continuous: bool = True,
+) -> None:
+    chunk_length = LSL_EEG_CHUNK
+
+    if not filename:
+        filename = os.path.join(os.getcwd(), "EEG_recording_%s.csv" % (strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
+
+    print("Looking for a EEG stream...")
+    streams = resolve_byprop('type', 'EEG', timeout=LSL_SCAN_TIMEOUT)
+
+    if len(streams) == 0:
+        print("Can't find EEG stream.")
+        return
+
+    print("Started acquiring data.")
+    inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
+
+    info = inlet.info()
+    description = info.desc()
+
+    Nchan = info.channel_count()
+
+    ch = description.child('channels').first_child()
+    ch_names = [ch.child_value('label')]
+    for i in range(1, Nchan):
+        ch = ch.next_sibling()
+        ch_names.append(ch.child_value('label'))
+
+    inlet_marker = False
+    markers = []
+    res = []
+    timestamps = []
+    t_init = time()
+    time_correction = inlet.time_correction()
+    last_written_timestamp = None
+    print('Start recording at time t=%.3f' % t_init)
+    print('Time correction: ', time_correction)
+    
+    while not stop_event.is_set():  # Check the stop event
+        try:
+            data, timestamp = inlet.pull_chunk(
+                timeout=1.0, max_samples=chunk_length)
+
+            if timestamp:
+                res.append(data)
+                timestamps.extend(timestamp)
+                tr = time()
+
+            # Save every save_frequence
+            if continuous and (last_written_timestamp is None or last_written_timestamp + save_frequence < timestamps[-1]):
+                _save(
+                    filename,
+                    res,
+                    timestamps,
+                    time_correction,
+                    dejitter,
+                    inlet_marker,
+                    markers,
+                    ch_names,
+                    last_written_timestamp=last_written_timestamp,
+                )
+                last_written_timestamp = timestamps[-1]
+
+        except KeyboardInterrupt:
+            break
+
+    time_correction = inlet.time_correction()
+    print("Time correction: ", time_correction)
+
+    _save(
+        filename,
+        res,
+        timestamps,
+        time_correction,
+        dejitter,
+        inlet_marker,
+        markers,
+        ch_names,
+    )
+
+    print("Done - wrote file: {}".format(filename))
+
+# def record_inputs ?
+
+def record_all(
+    stop_event: Event,
+    filename=None,
+    save_frequence=5,
+    dejitter=False,
+    continuous: bool = True,
+) -> None:
+    chunk_length = LSL_EEG_CHUNK
+
+    if not filename:
+        filename = os.path.join(os.getcwd(), "EEG_recording_%s.csv" % (strftime('%Y-%m-%d-%H.%M.%S', gmtime())))
+
+    print("Looking for a EEG stream...")
+    streams = resolve_byprop('type', 'EEG', timeout=LSL_SCAN_TIMEOUT)
+
+    if len(streams) == 0:
+        print("Can't find EEG stream.")
+        return
+
+    print("Started acquiring data.")
+    inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
+
+    print("Looking for a Markers stream...")
+    marker_streams = resolve_byprop('name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
+
+    if marker_streams:
+        inlet_marker = StreamInlet(marker_streams[0])
+    else:
+        inlet_marker = False
+        print("Can't find Markers stream.")
+
+    info = inlet.info()
+    description = info.desc()
+
+    Nchan = info.channel_count()
+
+    ch = description.child('channels').first_child()
+    ch_names = [ch.child_value('label')]
+    for i in range(1, Nchan):
+        ch = ch.next_sibling()
+        ch_names.append(ch.child_value('label'))
+
+    res = []
+    timestamps = []
+    markers = []
+    t_init = time()
+    time_correction = inlet.time_correction()
+    last_written_timestamp = None
+    print('Start recording at time t=%.3f' % t_init)
+    print('Time correction: ', time_correction)
+    
+    while not stop_event.is_set():  # Check the stop event
+        try:
+            data, timestamp = inlet.pull_chunk(
+                timeout=1.0, max_samples=chunk_length)
+
+            if timestamp:
+                res.append(data)
+                timestamps.extend(timestamp)
+                tr = time()
+            if inlet_marker:
+                marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
+                if marker:
+                    markers.append([timestamp] + marker)  # Ajoute les 4 valeurs séparées                
+
+            # Save every save_frequence
+            if continuous and (last_written_timestamp is None or last_written_timestamp + save_frequence < timestamps[-1]):
+                _save(
+                    filename,
+                    res,
+                    timestamps,
+                    time_correction,
+                    dejitter,
+                    inlet_marker,
+                    markers,
+                    ch_names,
+                    last_written_timestamp=last_written_timestamp,
+                )
+                last_written_timestamp = timestamps[-1]
+
+        except KeyboardInterrupt:
+            break
+
+    time_correction = inlet.time_correction()
+    print("Time correction: ", time_correction)
+
+    _save(
+        filename,
+        res,
+        timestamps,
+        time_correction,
+        dejitter,
+        inlet_marker,
+        markers,
+        ch_names,
+    )
+
+    print("Done - wrote file: {}".format(filename))
+
+#region [legacy functions]
+
 def record_for(
     duration: int,
     filename=None,
@@ -222,3 +412,5 @@ def record_until(
     )
 
     print("Done - wrote file: {}".format(filename))
+
+#endregion

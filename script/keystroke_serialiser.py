@@ -1,34 +1,34 @@
 import serial
+import time
 from pynput.keyboard import Controller, Key
+from pylsl import StreamInfo, StreamOutlet
 
+# Création du flux LSL avec 4 canaux (1 par touche)
+info = StreamInfo('ArduinoMarkers', 'Markers', 4, 0, 'int32', 'arduino123')
+outlet = StreamOutlet(info)
+
+# Connexion série avec l'Arduino
 ser = serial.Serial('COM9', 9600)
 keyboard = Controller()
 
 while True:
     line = ser.readline().decode().strip()
     if line:
-        boutons = line.split(',')
+        # Convertir directement en tableau d'entiers
+        boutons = list(map(int, line.split(',')))
+        
+        # Assigner les valeurs
+        left, right, up, down = boutons  # Décomposition du tableau
+        timestamp = time.time()  # Capture du temps UNIX
+        
+        # Simule la pression des touches
+        keyboard.press(Key.left) if left else keyboard.release(Key.left)
+        keyboard.press(Key.right) if right else keyboard.release(Key.right)
+        keyboard.press(Key.up) if up else keyboard.release(Key.up)
+        keyboard.press(Key.down) if down else keyboard.release(Key.down)
 
-        if boutons[0] == "1":
-            keyboard.press(Key.left)  # Flèche gauche
-        else:
-            keyboard.release(Key.left)
+        # Envoi des 4 valeurs dans le flux LSL
+        outlet.push_sample(boutons, timestamp)
 
-        if boutons[1] == "1":
-            keyboard.press(Key.right)  # Flèche droite
-        else:
-            keyboard.release(Key.right)
-
-        if boutons[2] == "1":
-            keyboard.press(Key.up)  # Flèche haut (Accélérer)
-        else:
-            keyboard.release(Key.up)
-
-        if boutons[3] == "1":
-            keyboard.press(Key.down)  # Flèche bas (Frein)
-        else:
-            keyboard.release(Key.down)
-
-
-
-
+# Might be usefull to rewrite this script into 2 functions: 
+# with and without the LSL stream
