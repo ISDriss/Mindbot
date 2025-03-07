@@ -25,6 +25,6 @@ void loop() {
     Serial.print(",");
     Serial.println(b4);
     
-    delay(100);
+    delay(14); //If the delay is less than 14, the python code becomes unable to decode the data
 }
 

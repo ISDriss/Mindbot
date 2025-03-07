@@ -117,10 +117,12 @@ def record_all(
     inlet = StreamInlet(streams[0], max_chunklen=chunk_length)
 
     print("Looking for a Markers stream...")
-    marker_streams = resolve_byprop('name', 'Markers', timeout=LSL_SCAN_TIMEOUT)
+    marker_streams = resolve_byprop('name', 'ArduinoMarkers', timeout=LSL_SCAN_TIMEOUT)
 
     if marker_streams:
+        print("Found ArduinoMarkers stream", marker_streams)
         inlet_marker = StreamInlet(marker_streams[0])
+        inlet_marker.open_stream()  # Ouvre explicitement le flux
     else:
         inlet_marker = False
         print("Can't find Markers stream.")
@@ -156,11 +158,12 @@ def record_all(
                 tr = time()
             if inlet_marker:
                 marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
-                if marker:
-                    markers.append([timestamp] + marker)  # Ajoute les 4 valeurs séparées                
+                if marker and timestamp is not None:
+                    markers.append([marker, timestamp])  # Ajoute les 4 valeurs séparées                
 
             # Save every save_frequence
             if continuous and (last_written_timestamp is None or last_written_timestamp + save_frequence < timestamps[-1]):
+                print(f"Type de marker: {type(marker)} - Valeur: {marker}")
                 _save(
                     filename,
                     res,

@@ -2,13 +2,61 @@ import os
 import time
 import muselsl as msl
 from multiprocessing import Process, Event
-from muse_record import record_for, record_until
+from recorder import record_muse, record_all
 
 def stream(address):
     msl.stream(address)
 
 def view(version):
     msl.view(version=version)
+
+def record_menu(filename):
+    # Recording selection
+    print("1. Record EEG until stopped")
+    print("2. Record EEG for a set time")
+    print("3. Record EEG and buttons until stopped")
+    record_mode = input("Select recording mode : ")
+
+    stop_event = Event()
+
+    if record_mode == "1" :
+        # record until stopped
+        record_process = Process(target=record_muse, args=(stop_event, filename))
+        record_process.start()
+        time.sleep(5) # This is here only to allow the next print to be visible
+
+        # Wait for user input to stop recording
+        input("Press Enter to stop recording...")
+        stop_event.set()
+        record_process.join()
+    elif record_mode == "2" :
+        # record for a set time
+        record_time = input("Enter the time in seconds to record for : ")
+        try:
+            record_time = int(record_time)
+            if record_time <= 0:
+                raise ValueError("The recording time must be a positive number.")
+        except ValueError as e:
+            print(f"Invalid input: {e}, recording aborted")
+            return
+        record_process = Process(target=record_muse, args=(stop_event,filename))
+        record_process.start()
+        time.sleep(record_time)
+        stop_event.set()
+        record_process.join()
+    elif record_mode == "3" :
+        # record until stopped
+        record_process = Process(target=record_all, args=(stop_event, filename))
+        record_process.start()
+        time.sleep(5) # This is here only to allow the next print to be visible
+
+        # Wait for user input to stop recording
+        input("Press Enter to stop recording...")
+        stop_event.set()
+        record_process.join()
+    else:
+        print("Invalid selection, recording aborted")
+        return
 
 def setup():
     address = ""
@@ -37,36 +85,12 @@ def setup():
     data_folder = os.path.join(os.getcwd(), "data")
     filename = os.path.join(data_folder, "%s_recording_%s.csv" %("EEG",time.strftime('%Y-%m-%d-%H.%M.%S', time.localtime())))
 
-    # Recording selection
-    record_mode = input("Enter 1 to record until stopped, 2 to record for a set time: ")
-
-    if record_mode == "1" :
-        # record until stopped
-        stop_event = Event()
-        record_process = Process(target=record_until, args=(stop_event, filename))
-        record_process.start()
-        time.sleep(5) # Wait for the recording to start
-
-        # Wait for user input to stop recording
-        user_input = input("Press Enter to stop recording...")
-        stop_event.set()
-    else :
-        # record for a set time
-        record_time = input("Enter the time in seconds to record for : ")
-        try:
-            record_time = int(record_time)
-        except ValueError:
-            print("Invalid input, recording aborted")
-            view_process.kill()
-            stream_process.kill()
-            return
-        record_process = Process(target=record_for, args=(record_time,filename))
-        record_process.start()
+    # Record the data
+    record_menu(filename)
 
     # end all processes
-    record_process.join()
-    view_process.kill()
-    stream_process.kill()
+    view_process.terminate()
+    stream_process.terminate()
 
 if __name__ == "__main__":
     setup()
