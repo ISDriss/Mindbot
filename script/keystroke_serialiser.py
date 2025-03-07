@@ -8,7 +8,7 @@ info = StreamInfo('ArduinoMarkers', 'Markers', 4, 0, 'int32', 'arduino123')
 outlet = StreamOutlet(info)
 
 # Connexion série avec l'Arduino
-ser = serial.Serial('COM9', 9600)
+ser = serial.Serial('COM8', 9600)
 keyboard = Controller()
 
 while True:
@@ -29,6 +29,7 @@ while True:
 
         # Envoi des 4 valeurs dans le flux LSL
         outlet.push_sample(boutons, timestamp)
+        print(boutons, timestamp) # Affichage pour le débogage
 
 # Might be usefull to rewrite this script into 2 functions: 
 # with and without the LSL stream
