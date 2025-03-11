@@ -5,6 +5,8 @@ from muselsl.constants import LSL_SCAN_TIMEOUT, LSL_EEG_CHUNK, LSL_PPG_CHUNK, LS
 from muselsl.record import _save
 from multiprocessing import Event
 
+DEFAULT_MARKER = [0, 0, 0, 0]
+
 def record_muse(
     stop_event: Event,
     filename=None,
@@ -141,6 +143,7 @@ def record_all(
     res = []
     timestamps = []
     markers = []
+    last_marker = DEFAULT_MARKER
     t_init = time()
     time_correction = inlet.time_correction()
     last_written_timestamp = None
@@ -155,15 +158,23 @@ def record_all(
             if timestamp:
                 res.append(data)
                 timestamps.extend(timestamp)
-                tr = time()
+                tr = time()           
+                  
             if inlet_marker:
-                marker, timestamp = inlet_marker.pull_sample(timeout=0.0)
-                if marker and timestamp is not None:
-                    markers.append([marker, timestamp])  # Ajoute les 4 valeurs séparées                
+                marker, timestamp = inlet_marker.pull_sample(timeout=0.1)
+                print(f"Marker: {last_marker} - Timestamp: {time()}") # Debug
+                
+                if marker is not None:  
+                    last_marker = marker
+                
+                if timestamp is None:
+                    timestamp = time()
+                
+                markers.append([last_marker, timestamp]) # Save with the last marker value
 
             # Save every save_frequence
             if continuous and (last_written_timestamp is None or last_written_timestamp + save_frequence < timestamps[-1]):
-                print(f"Type de marker: {type(marker)} - Valeur: {marker}")
+                print(f"Type de marker: {type(marker)} - Valeur: {marker}") # Debug
                 _save(
                     filename,
                     res,

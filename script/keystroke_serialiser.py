@@ -8,7 +8,7 @@ info = StreamInfo('ArduinoMarkers', 'Markers', 4, 0, 'int32', 'arduino123')
 outlet = StreamOutlet(info)
 
 # Connexion série avec l'Arduino
-ser = serial.Serial('COM8', 9600)
+ser = serial.Serial('COM5', 9600) # Trouver un moyen de détecter automatiquement le port
 keyboard = Controller()
 
 while True:

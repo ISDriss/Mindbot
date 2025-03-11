@@ -39,14 +39,14 @@ def record_menu(filename):
         except ValueError as e:
             print(f"Invalid input: {e}, recording aborted")
             return
-        record_process = Process(target=record_muse, args=(stop_event,filename))
+        record_process = Process(target=record_muse, args=(stop_event,filename, 1))
         record_process.start()
-        time.sleep(record_time)
+        time.sleep(record_time + 2)
         stop_event.set()
         record_process.join()
     elif record_mode == "3" :
         # record until stopped
-        record_process = Process(target=record_all, args=(stop_event, filename))
+        record_process = Process(target=record_muse, args=(stop_event, filename, 1))
         record_process.start()
         time.sleep(5) # This is here only to allow the next print to be visible
 
