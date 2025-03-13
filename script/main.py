@@ -82,7 +82,7 @@ def setup():
     time.sleep(5) # Wait for the viewer to start
 
     # record file to the correct folder
-    data_folder = os.path.join(os.getcwd(), "data")
+    data_folder = os.path.join(os.getcwd(), "recording")
     filename = os.path.join(data_folder, "%s_recording_%s.csv" %("EEG",time.strftime('%Y-%m-%d-%H.%M.%S', time.localtime())))
 
     # Record the data

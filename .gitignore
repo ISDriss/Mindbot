@@ -131,8 +131,7 @@ env.bak/
 venv.bak/
 
 # Data folder
-data/*
-!data/EEGvisu.ipynb
+recording/*
 
 # Spyder project settings
 .spyderproject
