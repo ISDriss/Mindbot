@@ -37,12 +37,24 @@ String index_html = R"rawliteral(
 <head>
 <title> WebSockets Client</title>
 <script src='http://code.jquery.com/jquery-1.9.1.min.js'></script>
+<style>
+  body { text-align: center; }
+  img { width: 100%; max-width: 800px; cursor: pointer; }
+  .fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; display: flex; align-items: center; justify-content: center; }
+  .fullscreen img { width: auto; height: 100%; }
+</style>
 </head>
 <body>
-<img id='live' src=''>
-</body>
-</html>
+<img id='live' src='' onclick='toggleFullScreen(this)'>
 <script>
+function toggleFullScreen(img) {
+    if (!document.fullscreenElement) {
+        img.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
 jQuery(function($){
 if (!('WebSocket' in window)) {
     alert('Your browser does not support web sockets');
@@ -68,6 +80,8 @@ function setup(){
 }
 });
 </script>
+</body>
+</html>
 )rawliteral";
 
 // ✅ Fonction de configuration de la caméra

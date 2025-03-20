@@ -53,13 +53,13 @@ void handleReverse() {
 
 void handleLeft() {
   Serial.println("Turning Left");
-  moveMotors(LOW, HIGH, LOW, HIGH);
+  moveMotors(LOW, LOW, LOW, HIGH);      //use [LOW, HIGH, LOW, HIGH] for better turning speed 
   server.send(200, "text/plain", "Turning Left");
 }
 
 void handleRight() {
   Serial.println("Turning Right");
-  moveMotors(HIGH, LOW, HIGH, LOW);
+  moveMotors(HIGH, LOW, LOW, LOW);     //use [HIGH, LOW, HIGH, LOW] for better turning speed
   server.send(200, "text/plain", "Turning Right");
 }
 
