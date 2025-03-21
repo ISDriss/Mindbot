@@ -1,3 +1,5 @@
+# This file is a modified version of the original file from the muselsl library
+
 import os
 from pylsl import StreamInlet, resolve_byprop
 from time import time, strftime, gmtime
